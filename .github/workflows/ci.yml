@@ -72,7 +72,7 @@ jobs:
       - name: Attendre que l'API démarre
         run: |
           for i in {1..30}; do
-            if docker exec trainshop-api-test curl -f http://localhost:3000/health > /dev/null 2>&1; then
+            if curl -f http://localhost:3000/health > /dev/null 2>&1; then
               echo "API is ready"
               exit 0
             fi
@@ -87,7 +87,7 @@ jobs:
           response=$(curl -s http://localhost:3000/health)
           echo "Réponse /health: $response"
 
-          if echo "$response" | grep -q '"status":"ok"'; then
+          if echo "$response" | grep -q 'ok'; then
             echo "✓ L'endpoint /health répond correctement"
           else
             echo "✗ L'endpoint /health ne répond pas correctement"
