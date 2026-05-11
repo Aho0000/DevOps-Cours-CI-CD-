@@ -1,0 +1,46 @@
+name: TrainShop Starter CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-api:
+    name: Tester API
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Installer les dépendances
+        working-directory: ./api
+        run: npm install
+
+      - name: Lancer les tests
+        working-directory: ./api
+        run: npm test
+
+  docker-build:
+    name: Vérifier les builds Docker
+    runs-on: ubuntu-latest
+    needs: test-api
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Construire l'image Docker de l'API
+        run: docker build -t trainshop-api ./api
+
+      - name: Construire l'image Docker du frontend
+        run: docker build -t trainshop-frontend ./frontend

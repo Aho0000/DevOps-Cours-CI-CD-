@@ -10,7 +10,15 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.json({
     message: 'Bienvenue sur TrainShop Starter',
-    endpoints: ['/health', '/products']
+    endpoints: ['/health', '/products', '/about']
+  });
+});
+
+app.get('/about', (req, res) => {
+  res.json({
+    project: 'TrainShop Starter',
+    module: 'DevOps',
+    objective: 'Créer une CI GitHub Actions'
   });
 });
 
