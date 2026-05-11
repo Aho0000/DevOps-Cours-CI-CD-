@@ -26,6 +26,10 @@ jobs:
         working-directory: ./api
         run: npm install
 
+      - name: Vérifier la qualité du code
+        working-directory: ./api
+        run: npm run lint
+
       - name: Lancer les tests
         working-directory: ./api
         run: npm test
@@ -44,3 +48,56 @@ jobs:
 
       - name: Construire l'image Docker du frontend
         run: docker build -t trainshop-frontend ./frontend
+
+  docker-health-check:
+    name: Vérifier la santé du container API
+    runs-on: ubuntu-latest
+    needs: docker-build
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Construire l'image Docker de l'API
+        run: docker build -t trainshop-api ./api
+
+      - name: Démarrer le container
+        run: |
+          docker run -d \
+            --name trainshop-api-test \
+            -p 3000:3000 \
+            -e API_PORT=3000 \
+            trainshop-api
+
+      - name: Attendre que l'API démarre
+        run: |
+          for i in {1..30}; do
+            if docker exec trainshop-api-test curl -f http://localhost:3000/health > /dev/null 2>&1; then
+              echo "API is ready"
+              exit 0
+            fi
+            echo "Tentative $i/30, en attente du démarrage..."
+            sleep 1
+          done
+          echo "L'API n'a pas démarré à temps"
+          exit 1
+
+      - name: Tester l'endpoint /health
+        run: |
+          response=$(curl -s http://localhost:3000/health)
+          echo "Réponse /health: $response"
+
+          if echo "$response" | grep -q '"status":"ok"'; then
+            echo "✓ L'endpoint /health répond correctement"
+          else
+            echo "✗ L'endpoint /health ne répond pas correctement"
+            exit 1
+          fi
+
+      - name: Afficher les logs du container
+        if: always()
+        run: docker logs trainshop-api-test
+
+      - name: Arrêter et nettoyer le container
+        if: always()
+        run: docker stop trainshop-api-test && docker rm trainshop-api-test
